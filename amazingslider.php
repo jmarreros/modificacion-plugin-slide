@@ -142,15 +142,26 @@ class AmazingSlider_Plugin_3
 
 	public function guardarDatosArchivo()
 	{
+		$msg_exito = '	<div class="updated"><p style="text-align:center;"> 
+							<strong>Se guardaron correctamente los cambios</strong>
+						</p></div>';
+		$msg_error = '	<div class="error notice"><p style="text-align:center;"> 
+							<strong>Hubo un error al guardar los cambios</strong>
+						</p></div>';
+
 		if (isset($_POST['guardar']))
 		{
 			foreach($_POST['upload_image'] as $i=>$imagen){
-				$titulo = $_POST['titulo'];
-				$url 	= $_POST['url'];
-				
+				$titulo = $_POST['upload_title'];
+				$url 	= $_POST['upload_url'];
+
 				echo $imagen."</br>";
 			}
+
+			//Guardo correctamente
+			echo $msg_error;
 		}
+
 	}
 	
 	public function show_slider()
