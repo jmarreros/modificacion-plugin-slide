@@ -210,7 +210,8 @@ class AmazingSlider_Plugin_3
 			echo $controles;
 		}
 
-	}
+	} // Fin leerDatosArchivo
+
 
 	/*
 	Funcion para guardar los datos en el archivo slider.html
@@ -221,18 +222,12 @@ class AmazingSlider_Plugin_3
 
 		if (isset($_POST['guardar']))
 		{
-
-			$msgExito 	= '<div class="updated"><p style="text-align:center;"><strong>Se guardaron correctamente los cambios</strong></p></div>';
-			$msgError 	= '<div class="error notice"><p style="text-align:center;"><strong>Hubo un error al guardar los cambios</strong></p></div>';
-
 			$plantilla 	= '<li><a href="{url}"><img src="{imagen}" title="{titulo}" alt="{titulo}" /></a></li>'; //alt , title : tienen el mismo valor
-			
 			$nuevoContenido  ="";
 			
-		
 			foreach($_POST['upload_image'] as $i=>$imagen)
 			{
-				$url 	= esc_url($_POST['upload_url'][$i]);
+				$url 	= $_POST['upload_url'][$i]?esc_url($_POST['upload_url'][$i]):"#";
 				$titulo = sanitize_text_field($_POST['upload_title'][$i]);
 				$imagen = esc_url($imagen);
 
@@ -242,42 +237,30 @@ class AmazingSlider_Plugin_3
 				$nuevoContenido .= str_replace($buscar, $reemplazar , $plantilla);
 			}
 
-			// echo "---".RUTA_ARCHIVO_HTML."<br>";
-			// echo '<ul class="xxx">'.$nuevoContenido.'</ul>';
-
-
 			$contenidoArchivo 	= file_get_contents(RUTA_ARCHIVO_HTML);
-			$patron 			= '/\<ul class\=\"amazingslider\-slides\".*?\>(.*?)\<\/ul\>/s';
+			$patron 			= '/(\<ul class\=\"amazingslider\-slides\".*?\>)(.*?)(\<\/ul\>)/s';
+			$reemplazar 		= '$1'.$nuevoContenido.'$3';
 
-			preg_match($patron,$contenidoArchivo,$cadena);
+			$contenidoArchivo = preg_replace($patron,$reemplazar,$contenidoArchivo);
 
-			echo "<div class='sss'>exp :";
-			echo $cadena[1];
-			echo "</div>";
+			//Abrimos el archivo para escritura.
+			try
+			{
+				$archivo = fopen(RUTA_ARCHIVO_HTML, "w");
+				fwrite($archivo , $contenidoArchivo);
+				fclose($archivo);
+				
+				echo $this->mensaje("Se guardaron correctamente los cambios");								
+			}
+			catch(Exception $e)
+			{
+				echo $this->mensaje("Error : ".$e->getMessage(),true);
+			}
 
-//$regexp='/\<div class\=\"cropped-image\" style\=\"width:102px;height:102px;\" \>(.*?)\<\/div\>/';
-// preg_match($regexp,$file,$string1);
-
-
-			//Guardo correctamente
-			//echo $msg_error;
 		}
 
+	} // Fin guardarDatosArchivo
 
-
-		
-		// $dest_url = AMAZINGSLIDER_URL_3 . '/data/';
-		
-		// $slidercode = "";
-		// $pattern = '/<!-- Insert to your webpage where you want to display the slider -->(.*)<!-- End of body section HTML codes -->/s';
-
-		// if ( preg_match($pattern, $content, $matches) ){
-		// 	$slidercode = str_replace("%DESTURL%", $dest_url, $matches[1]);
-		// }
-		
-		// return $slidercode;
-
-	}
 
 	/*
 	Script para que aparezca la ventana de medios de Wordpress
@@ -324,7 +307,25 @@ class AmazingSlider_Plugin_3
 
 		</script>
 		<?php
-	}
+	} // Fin scriptMediaWordpress
+
+
+	/*
+	Funcion para emitir un mensaje de exito o error
+	*/
+	private function mensaje( $mensaje , $error=false )
+	{
+		$plantilla 	= '<div class="{clase}"><p style="text-align:center;"><strong>{mensaje}</strong></p></div>';
+		$clase 		= $error?"error notice":"updated";		
+		
+		$mensaje 	= str_replace(Array("{clase}","{mensaje}"), Array($clase,$mensaje), $plantilla);
+
+		return $mensaje;
+
+	} //Fin mensaje
+
+
+
 
 	
 }
