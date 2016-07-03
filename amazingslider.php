@@ -16,7 +16,9 @@ define('AMAZINGSLIDER_URL_3', plugin_dir_url( __FILE__ ));
 define('AMAZINGSLIDER_PATH_3', plugin_dir_path( __FILE__ ));
 
 //
-//--- Codigo Agregado-1
+//--- Codigo Agregado
+define('RUTA_DATA_INICIAL',plugin_dir_url( __FILE__ ).'data/');
+define('RUTA_ARCHIVO_HTML',plugin_dir_path( __FILE__ ).'data/slider.html');
 
 include('simple_html_dom.php');
 
@@ -26,7 +28,7 @@ function load_wp_media_files() {
 add_action( 'admin_enqueue_scripts', 'load_wp_media_files' );
 
 
-//--- Fin codigo agregado-1
+//--- Fin codigo agregado
 //
 
 
@@ -102,67 +104,6 @@ class AmazingSlider_Plugin_3
 				AMAZINGSLIDER_URL_3 . 'images/logo-16.png' );
 				
 	}
-
-
-	private function leerDatosArchivo()
-	{
-
-		$plantillaContent	= '	
-			<tr valign="top" class="slide">
-				<td>
-					<strong>SLIDE </strong><a href="#">Eliminar</a><hr/>
-					<label>Url</label> : <input class="upload_url" type="text" size="36" name="upload_url[]" value="{url}"   /><br/>
-					<label>Titulo</label> : <input class="upload_title" type="text" size="36" name="upload_title[]" value="{titulo}"   /><br/>
-					<label>Imagen</label> : <input class="upload_image" type="text" size="36" name="upload_image[]" value="{imagen}"   />
-					<input class="upload_image_button button button-primary" type="button" value="Subir Imagen" />
-				</td>
-			</tr>';
-
-		$html 			= file_get_html(AMAZINGSLIDER_PATH_3 . '/data/slider.html');
-		$url_inicial	= AMAZINGSLIDER_URL_3 . '/data/';
-
-		foreach($html->find('.amazingslider-slides li') as $e)
-		{
-			
-			$enlace = $e->find('a')[0];
-			$ruta 	= $enlace->href;
-			$imagen = $e->find('img')[0];
-			$src 	= str_replace("%DESTURL%", $url_inicial,$imagen->src);
-			$alt 	= $imagen->alt;
-			$cont 	= $plantillaContent;
-
-			$cont = str_replace("{url}", $ruta, $cont);
-			$cont = str_replace("{titulo}", $alt, $cont);
-			$cont = str_replace("{imagen}", $src, $cont);
-
-			echo $cont;
-		}
-
-	}
-
-	public function guardarDatosArchivo()
-	{
-		$msg_exito = '	<div class="updated"><p style="text-align:center;"> 
-							<strong>Se guardaron correctamente los cambios</strong>
-						</p></div>';
-		$msg_error = '	<div class="error notice"><p style="text-align:center;"> 
-							<strong>Hubo un error al guardar los cambios</strong>
-						</p></div>';
-
-		if (isset($_POST['guardar']))
-		{
-			foreach($_POST['upload_image'] as $i=>$imagen){
-				$titulo = $_POST['upload_title'];
-				$url 	= $_POST['upload_url'];
-
-				echo $imagen."</br>";
-			}
-
-			//Guardo correctamente
-			echo $msg_error;
-		}
-
-	}
 	
 	public function show_slider()
 	{
@@ -179,13 +120,28 @@ class AmazingSlider_Plugin_3
 				
 		<?php
 			echo $this->generate_codes();
-		?>	 
-		
+		?>
 
 		</div>
+		
+		<?php $this->guardarDatosArchivo(); ?>
+		<?php $this->crearElementosAdicionales(); ?>
+
+		<?php
+	}
+
+
+	/*
+	Crea la interfaz adicional para el plugin, agrega estilos, javascript y los controles
+	del formulario en una estructura de tabla necesaria para administrar los slides.
+	*/
+	private function crearElementosAdicionales()
+	{
+		?>
+		
 		<br/>
 		<h2>Configurar Slides</h2>	
-		
+
 		<style>
 			.slides label{
 				display: inline-block;
@@ -201,7 +157,136 @@ class AmazingSlider_Plugin_3
 		</style>
 
 
-		<script language="JavaScript">
+		<?php $this->scriptMediaWordpress() ?>
+
+
+		<form name="form_guardar" method="post" action="<?php echo $_SERVER['PHP_SELF']."?".$_SERVER['QUERY_STRING']; ?>" >
+			<table class="slides">
+				<?php $this->leerDatosArchivo(); ?>
+			</table>
+
+			<input class="button button-primary" name="guardar" type="submit" value="Grabar Datos" />
+		</form>
+		<?php
+	}
+
+
+
+	/*
+	Funcion para mostrar los controles de formulario 
+	con los datos obtenidos del archivo slider.html
+	*/
+	private function leerDatosArchivo()
+	{
+
+		$plantillaControles	= '	
+			<tr valign="top" class="slide">
+				<td>
+					<strong>SLIDE </strong><a href="#">Eliminar</a><hr/>
+					<label>Url</label> : <input class="upload_url" type="text" size="36" name="upload_url[]" value="{url}"   /><br/>
+					<label>Titulo</label> : <input class="upload_title" type="text" size="36" name="upload_title[]" value="{titulo}"   /><br/>
+					<label>Imagen</label> : <input class="upload_image" type="text" size="36" name="upload_image[]" value="{imagen}"   />
+					<input class="upload_image_button button button-primary" type="button" value="Subir Imagen" />
+				</td>
+			</tr>';
+
+		$html 		= file_get_html( RUTA_ARCHIVO_HTML );
+		$urlInicial	= RUTA_DATA_INICIAL;
+
+		foreach($html->find('.amazingslider-slides li') as $e)
+		{
+			
+			$e_url 		= $e->find('a')[0];
+			$url 		= $e_url->href;
+			$e_imagen 	= $e->find('img')[0];
+			$imagen 	= str_replace("%DESTURL%", $urlInicial,$e_imagen->src);
+			$titulo 	= $e_imagen->title;
+
+			$buscar 	= Array("{url}","{titulo}","{imagen}");
+			$reemplazar = Array($url,$titulo,$imagen);
+
+			$controles 	= str_replace($buscar, $reemplazar, $plantillaControles);
+
+			echo $controles;
+		}
+
+	}
+
+	/*
+	Funcion para guardar los datos en el archivo slider.html
+	obtenidos de lo que se a cambiado en los controles generados
+	*/
+	private function guardarDatosArchivo()
+	{
+
+		if (isset($_POST['guardar']))
+		{
+
+			$msgExito 	= '<div class="updated"><p style="text-align:center;"><strong>Se guardaron correctamente los cambios</strong></p></div>';
+			$msgError 	= '<div class="error notice"><p style="text-align:center;"><strong>Hubo un error al guardar los cambios</strong></p></div>';
+
+			$plantilla 	= '<li><a href="{url}"><img src="{imagen}" title="{titulo}" alt="{titulo}" /></a></li>'; //alt , title : tienen el mismo valor
+			
+			$nuevoContenido  ="";
+			
+		
+			foreach($_POST['upload_image'] as $i=>$imagen)
+			{
+				$url 	= esc_url($_POST['upload_url'][$i]);
+				$titulo = sanitize_text_field($_POST['upload_title'][$i]);
+				$imagen = esc_url($imagen);
+
+				$buscar 	= Array("{url}","{imagen}","{titulo}");
+				$reemplazar = Array($url,$imagen,$titulo);
+
+				$nuevoContenido .= str_replace($buscar, $reemplazar , $plantilla);
+			}
+
+			// echo "---".RUTA_ARCHIVO_HTML."<br>";
+			// echo '<ul class="xxx">'.$nuevoContenido.'</ul>';
+
+
+			$contenidoArchivo 	= file_get_contents(RUTA_ARCHIVO_HTML);
+			$patron 			= '/\<ul class\=\"amazingslider\-slides\".*?\>(.*?)\<\/ul\>/s';
+
+			preg_match($patron,$contenidoArchivo,$cadena);
+
+			echo "<div class='sss'>exp :";
+			echo $cadena[1];
+			echo "</div>";
+
+//$regexp='/\<div class\=\"cropped-image\" style\=\"width:102px;height:102px;\" \>(.*?)\<\/div\>/';
+// preg_match($regexp,$file,$string1);
+
+
+			//Guardo correctamente
+			//echo $msg_error;
+		}
+
+
+
+		
+		// $dest_url = AMAZINGSLIDER_URL_3 . '/data/';
+		
+		// $slidercode = "";
+		// $pattern = '/<!-- Insert to your webpage where you want to display the slider -->(.*)<!-- End of body section HTML codes -->/s';
+
+		// if ( preg_match($pattern, $content, $matches) ){
+		// 	$slidercode = str_replace("%DESTURL%", $dest_url, $matches[1]);
+		// }
+		
+		// return $slidercode;
+
+	}
+
+	/*
+	Script para que aparezca la ventana de medios de Wordpress
+	y poder subir una nueva imagen o buscar una existente
+	*/
+	private function scriptMediaWordpress()
+	{
+		?>
+			<script language="JavaScript">
 
 			jQuery(document).ready(function($){
 				
@@ -224,14 +309,12 @@ class AmazingSlider_Plugin_3
 				      multiple: false
 				    });
 
-
 				    frame.on( 'select', function() {
 				      
 				      var attachment = frame.state().get('selection').first().toJSON();
 				      ruta.val(attachment.url);
 
 				    });
-
 
 				    frame.open();
 
@@ -240,21 +323,9 @@ class AmazingSlider_Plugin_3
 			});
 
 		</script>
-
-		<?php $this->guardarDatosArchivo() ?>
-
-		<form name="form_guardar" method="post" action="<?php echo $_SERVER['PHP_SELF']."?".$_SERVER['QUERY_STRING']; ?>" >
-			<table class="slides">
-				<?php $this->leerDatosArchivo(); ?>
-			</table>
-
-			<input class="button button-primary" name="guardar" type="submit" value="Grabar Datos" />
-		</form>
-
-
 		<?php
-
 	}
+
 	
 }
 
