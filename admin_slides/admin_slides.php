@@ -44,9 +44,6 @@ class adminSlides
 	{
 		?>
 		
-		<br/>
-		<h2>Configurar Slides</h2>	
-
 		<style>
 			.slides label{
 				display: inline-block;
@@ -59,8 +56,19 @@ class adminSlides
 				margin-bottom: 10px;
 				border : 1px solid #cecece;
 			}
+			.slides .eliminar{
+				margin-left: 10px;
+				margin-top: -8px;
+			}
+			.button.agregar{
+				margin-bottom:20px;
+			}
 		</style>
 
+		<br/>
+		<h2>Configurar Slides</h2>	
+		<a href="#" class="button agregar"  >Agregar Slide</a>
+		<a href="#" class="button refrescar" >Refrescar Slides</a>
 
 		<?php $this->scriptMediaWordpress() ?>
 
@@ -85,7 +93,7 @@ class adminSlides
 		$plantillaControles	= '	
 			<tr valign="top" class="slide">
 				<td>
-					<strong>SLIDE </strong><a href="#">Eliminar</a><hr/>
+					<strong>SLIDE </strong><a class="button eliminar" href="#">Eliminar</a><hr/>
 					<label>Url</label> : <input class="upload_url" type="text" size="36" name="upload_url[]" value="{url}"   /><br/>
 					<label>Titulo</label> : <input class="upload_title" type="text" size="36" name="upload_title[]" value="{titulo}"   /><br/>
 					<label>Imagen</label> : <input class="upload_image" type="text" size="36" name="upload_image[]" value="{imagen}"   />
@@ -176,11 +184,12 @@ class adminSlides
 
 			jQuery(document).ready(function($){
 				
-				$('.slide').on('click','.upload_image_button',function() {
+				//Ventana de Medios
+				$('.slide .upload_image_button').live('click',function() {
 
 					var frame,
-						slide 	= $(this).parent(), 
-						ruta 	= $('.upload_image', slide);
+						contenedor 	= $(this).parent(),
+						ruta 		= $('.upload_image', contenedor);
 
 				    if ( frame ) {
 				      frame.open();
@@ -205,6 +214,54 @@ class adminSlides
 				    frame.open();
 
 				});
+
+
+				//Agregar Slide
+				$('.agregar').click(function(e){
+					e.preventDefault();
+					
+					if ($('.slides .slide').length <= 12){
+
+						slide = $('.slides .slide').last();
+
+						if ( slide.find('.upload_image').val() !== '' ){
+
+							slide = $('.slides .slide').last().clone();
+							slide.find('input[type="text"]').val('');
+							slide.appendTo('.slides');
+
+						}
+						else{
+							alert("Debe colocar una imagen en el último slide");
+						}
+					}
+					else{
+						alert("Sólo puede haber 12 slides como máximo");
+					}
+
+				});
+
+
+				//Eliminar Slide
+				$('.slide .eliminar').live('click',function(e){
+					e.preventDefault();
+
+					if ( $('.slides .slide').length > 1 ){
+						slide = $(this).parent().parent();
+						slide.remove();
+					}
+					else{
+						alert("Debe haber por lo menos 1 slide");
+					}
+
+				});
+
+				//Refrescar Slides
+				$('.refrescar').click(function(e){
+					e.preventDefault();
+					location.reload();
+				});
+
 
 			});
 
