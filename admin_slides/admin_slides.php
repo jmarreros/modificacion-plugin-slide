@@ -15,6 +15,7 @@ include('simple_html_dom.php'); //dependencia para facilitar la lectura del DOM
 //Configurar rutas de ser necesario
 define('RUTA_DATA_INICIAL',plugin_dir_url( __FILE__ ).'../data/'); 
 define('RUTA_ARCHIVO_HTML',plugin_dir_path( __FILE__ ).'../data/slider.html');
+define('SIN_THUMBNAILS',true);
 
 //Agregar funcionalidad de ventana de medios de WordPress
 function load_wp_media_files() {
@@ -31,9 +32,51 @@ class adminSlides
 
 	function __construct() {
 
+		$this->borrarThumbnails();
 		$this->guardarDatosArchivo();
 		$this->crearElementosAdicionales();
 	
+	}
+
+	/*Funcion para borrar los Thumbnails para que no se muestren
+	miniaturas incompletas, esta función depende de la asignación de la constante 	asignación SIN_THUMBNAILS */
+	private function borrarThumbnails()
+	{
+		if ('SIN_THUMBNAILS')
+		{
+			$nuevosThumbnails	= "";
+			$contenidoArchivo 	= file_get_contents(RUTA_ARCHIVO_HTML);
+			$patron 			= '/(\<ul class\=\"amazingslider\-thumbnails\".*?\>)(.*?)(\<\/ul\>)/s';
+
+			//Verificamos si existe este patron y capturamos los grupos
+			if ( preg_match_all($patron,$contenidoArchivo,$coincidencias) )
+			{
+				//Verificamos si tiene contenido, entonces reemplazamos.
+				if ( $coincidencias[1] )
+				{
+					$reemplazar 		= '$1'.$nuevosThumbnails.'$3';
+
+					$contenidoArchivo = preg_replace($patron,$reemplazar,$contenidoArchivo);
+
+					//Abrimos el archivo para escritura.
+					try
+					{
+						$archivo = fopen(RUTA_ARCHIVO_HTML, "w");
+						fwrite($archivo , $contenidoArchivo);
+						fclose($archivo);
+						
+					}
+					catch(Exception $e)
+					{
+						echo $this->mensaje("Error al eliminar miniaturas: ".$e->getMessage(),true);
+					}
+
+				} //coincidencia[1]
+
+			} //preg_match_all
+
+		}//SIN_THUMBNAILS
+
 	}
 
 	/*
